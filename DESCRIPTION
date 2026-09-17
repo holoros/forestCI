@@ -1,0 +1,44 @@
+Package: forestCI
+Title: Distance-Dependent and Distance-Independent Competition Indices for Forest Stands
+Version: 0.1.0
+Authors@R: c(
+    person("Aaron", "Weiskittel", email = "aaron.weiskittel@maine.edu",
+           role = c("aut", "cre")),
+    person("Justin", "Waskiewicz", role = "aut",
+           comment = "Original crown geometry and area potentially available algorithms"),
+    person("Christian", "Kuehne", role = "aut"))
+Description: A generalized implementation of individual-tree competition indices
+    for forest stands, covering both the distance-independent family (basal area,
+    basal area of larger trees, stand density index, relative density, crown
+    competition factor, crown competition factor of larger trees) and the
+    distance-dependent family (Hegyi, Spurr, Martin-Ek, Lorimer, Braathe,
+    Rouvinen-Kuuluvainen, Canham neighbourhood competition index, local basal
+    area, area potentially available from weighted Voronoi tessellation, its
+    rasterised form, exposed crown surface area, and open sky view). Indices that
+    require stem coordinates are computed when coordinates or distance and azimuth
+    are supplied, and the distance-independent set is always available. Crown
+    dimensions are obtained from a pluggable crown profile interface with three
+    built-in families and softwood or hardwood defaults, so the package generalises
+    to species with no local parameterisation. Methods follow Waskiewicz (2011) and
+    Kuehne, Weiskittel and Waskiewicz (2019) <doi:10.1016/j.foreco.2018.11.002>.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports:
+    data.table (>= 1.14.0),
+    grDevices,
+    stats,
+    utils
+Suggests:
+    sf (>= 1.0.0),
+    terra (>= 1.7.0),
+    ggplot2,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+LazyData: true
+URL: https://github.com/holoros/forestCI
+BugReports: https://github.com/holoros/forestCI/issues
+Config/roxygen2/version: 8.0.0

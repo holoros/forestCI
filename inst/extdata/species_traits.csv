@@ -1,0 +1,44 @@
+code,scientific_name,authority,common_name,sp_type,sg,shade,widest,up_exp,lo_exp,shape,mcw_a1,mcw_a2,lcw_b1,lcw_b2,source_crown
+AB,Fagus grandifolia,Ehrh.,American beech,HW,0.64,4.75,0.8,3,6,e,2.93,0.434,1.00,0.194,species
+AE,Ulmus americana,L.,American elm,HW,0.50,3.14,0.5,3,5,e,4.04,0.308,2.65,0.157,species
+AS,Fraxinus spp.,L.,ash,HW,0.57,2.84,0.6,3,4,e,4.04,0.308,2.65,0.157,type_default
+BA,Fraxinus nigra,Marshall,black ash,HW,0.50,2.96,0.6,3,3,e,4.04,0.308,2.65,0.157,species
+BC,Prunus serotina,Ehrh.,black cherry,HW,0.50,2.46,0.9,3,3,e,4.04,0.308,2.65,0.157,species
+BF,Abies balsamea,(L.) Mill.,balsam fir,SW,0.35,5.01,0.9,1,5,p,1.37,0.572,1.49,0.105,species
+BK,Robinia pseudoacacia,L.,black locust,HW,0.66,1.72,0.5,3,3,e,4.04,0.308,2.65,0.157,species
+BP,Populus balsamifera,L.,balsam poplar,HW,0.34,1.27,0.6,3,4,e,1.31,0.586,2.65,0.157,type_default
+BS,Picea mariana,(Mill.) Britton Sterns & Poggenb.,black spruce,SW,0.46,4.08,0.8,3,3,g,0.535,0.742,1.00,0.174,species
+BT,Populus grandidentata,Michx.,bigtooth aspen,HW,0.39,1.21,0.6,2,5,g,1.31,0.586,2.65,0.157,species
+BW,Tilia americana,L.,American basswood,HW,0.32,3.98,0.6,3,3,e,4.04,0.308,2.65,0.157,species
+EC,Populus deltoides,W.Bartram ex Marshall,eastern cottonwood,HW,0.40,1.76,0.6,3,4,e,1.31,0.586,2.65,0.157,type_default
+EH,Tsuga canadensis,(L.) Carriere,eastern hemlock,SW,0.40,4.83,0.8,3,4,g,2.44,0.408,1.90,-0.057,species
+GA,Fraxinus pennsylvanica,Marshall,green ash,HW,0.56,3.11,0.6,3,4,e,4.04,0.308,2.65,0.157,type_default
+GB,Betula populifolia,Marshall,gray birch,HW,0.48,1.50,0.6,3,4,e,2.24,0.382,3.10,-0.214,type_default
+HH,Ostrya virginiana,(Mill.) K.Koch,eastern hophornbeam,HW,0.78,4.58,0.6,3,4,e,4.04,0.308,2.65,0.157,type_default
+HI,Carya spp.,Nutt.,hickory,HW,0.66,3.00,0.6,3,3,g,4.04,0.308,2.65,0.157,species
+JP,Pinus banksiana,Lamb.,jack pine,SW,0.43,1.36,0.5,3,3,g,1.597128571,0.513957143,2.3276,0.027842857,species
+NC,Thuja occidentalis,L.,northern white cedar,SW,0.31,3.45,0.5,3,3,g,1.63,0.436,2.19,-0.080,species
+NS,Picea abies,(L.) H.Karst.,Norway spruce,SW,0.43,4.45,0.8,3,3,g,1.80,0.461,4.33,-0.264,species
+OH,NA,NA,other hardwoods,HW,0.5121,2.29,0.6,3,4,e,4.04,0.308,2.65,0.157,type_default
+OS,NA,NA,other softwoods,SW,0.445,2.27,0.8,3,3,g,1.597128571,0.513957143,2.3276,0.027842857,type_default
+PB,Betula papyrifera,Marshall,paper birch,HW,0.55,1.54,0.4,5,2,p,1.48,0.623,2.10,-0.035,species
+PC,Prunus pensylvanica,L.f.,pin cherry,HW,0.38,2.26,0.6,3,4,e,4.04,0.308,2.65,0.157,type_default
+PR,Prunus pensylvanica,L.f.,pin cherry,HW,0.38,2.26,0.6,3,4,e,4.04,0.308,2.65,0.157,type_default
+QA,Populus tremuloides,Michx.,quaking aspen,HW,0.38,1.21,0.6,2,5,e,1.31,0.586,2.65,0.157,species
+RB,Betula nigra,L.,river birch,HW,0.62,1.45,0.4,5,2,e,2.24,0.382,3.10,-0.214,species
+RM,Acer rubrum,L.,red maple,HW,0.54,3.44,0.7,3,6,e,2.17,0.491,2.63,-0.132,species
+RN,Pinus resinosa,Aiton,red pine,SW,0.46,1.89,0.5,3,3,g,1.597128571,0.513957143,2.3276,0.027842857,species
+RO,Quercus rubra,L.,northern red oak,HW,0.63,2.75,0.5,3,3,g,4.08,0.310,4.10,-0.272,species
+RP,Pinus resinosa,Aiton,red pine,SW,0.46,1.89,0.5,3,3,g,1.597128571,0.513957143,2.3276,0.027842857,species
+RS,Picea rubens,Sarg.,red spruce,SW,0.40,4.39,0.8,3,3,g,1.80,0.461,4.33,-0.264,species
+SB,Betula lenta,L.,sweet birch,HW,0.65,2.58,0.6,3,4,e,2.24,0.382,3.10,-0.214,type_default
+SC,Pinus sylvestris,L.,Scots pine,SW,0.41,1.67,0.5,3,3,g,1.597128571,0.513957143,2.3276,0.027842857,species
+SM,Acer saccharum,Marshall,sugar maple,HW,0.63,4.76,0.7,3,6,e,3.31,0.356,1.00,0.161,species
+ST,Acer pensylvanicum,L.,striped maple,HW,0.46,3.56,0.6,3,4,e,4.04,0.308,2.65,0.157,type_default
+TA,Larix laricina,(Du Roi) K.Koch,tamarack,SW,0.53,0.98,0.5,1,5,p,1.597128571,0.513957143,2.3276,0.027842857,species
+WA,Fraxinus americana,L.,white ash,HW,0.60,2.46,0.6,3,3,e,4.04,0.308,2.65,0.157,species
+WC,Thuja occidentalis,L.,northern white cedar,SW,0.31,3.45,0.8,2,3,g,1.63,0.436,2.19,-0.080,species
+WP,Pinus strobus,L.,eastern white pine,SW,0.35,3.21,0.4,3,3,p,1.24,0.585,1.00,0.147,species
+WS,Picea glauca,(Moench) Voss,white spruce,SW,0.40,4.15,0.8,3,3,g,1.50,0.496,2.09,-0.069,species
+YB,Betula alleghaniensis,Britton,yellow birch,HW,0.62,3.17,0.6,3,3,e,4.04,0.308,4.23,-0.264,species
+99,NA,NA,unknown,HW,0.30,3.00,0.6,3,4,e,2.24262,0.462653333,2.79282,-0.090113333,type_default

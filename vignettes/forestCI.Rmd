@@ -1,0 +1,134 @@
+---
+title: "Competition indices with forestCI"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Competition indices with forestCI}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 5, dpi = 150)
+library(forestCI)
+library(data.table)
+```
+
+## The one object everything reads from
+
+A competition index is a summary of a neighbourhood, so the first job is saying
+what a neighbourhood is. `as_stand()` does that once: it names the columns,
+fixes the plot geometry, attaches species traits, and derives basal area, crown
+widths and crown ratio. Every other function in the package takes the result and
+nothing else.
+
+```{r}
+st <- pef_stand()
+st
+```
+
+These are two stem-mapped permanent plots from the Penobscot Experimental
+Forest, each 0.0809 ha. Every tree carries a distance and bearing from plot
+centre, so the stand is spatial and the distance-dependent family is available.
+
+```{r stemmap, fig.cap = "Figure 1. Stem maps of the two example plots, symbol area proportional to basal area."}
+op <- par(mfrow = c(1, 2), mar = c(4, 4, 3, 1), bty = "l")
+for (p in unique(st$trees$plot_id)) {
+  d <- st$trees[st$trees$plot_id == p, ]
+  plot(d$x, d$y, cex = d$dbh / 12, pch = 21,
+       bg = ifelse(d$sp_type == "SW", "#2b6a4d", "#b07a2a"),
+       asp = 1, xlab = "Easting (m)", ylab = "Northing (m)", main = p)
+  symbols(0, 0, circles = 16.05, inches = FALSE, add = TRUE, fg = "grey60")
+}
+par(op)
+```
+
+## Without coordinates
+
+Most inventories have no stem map. That is not a failure case here. Drop the
+coordinates and the distance-independent family still computes, the rest is
+reported as skipped, and the returned table keeps the same shape.
+
+```{r}
+flat <- as.data.frame(st$trees)
+st_flat <- as_stand(flat, plot = "plot_id", tree = "tree_id",
+                    species = "species", dbh = "dbh", expf = "expf",
+                    quiet = TRUE)
+ci_flat <- competition_indices(st_flat)
+head(ci_flat[, .(tree_id, dbh, ba, bal, ccf, ccfl, sdi, rd)])
+```
+
+## With coordinates
+
+```{r}
+ci <- competition_indices(st, radius = 6, edge = "exclude",
+                          n_depth = 12L, n_azimuth = 36L, quiet = TRUE)
+head(ci[, .(tree_id, species, dbh, bal, ccfl, hegyi, local_bal, apa, csax_rel)])
+```
+
+`edge = "exclude"` blanks the distance-dependent columns for trees the exterior
+sector rule flags as plot edge trees. The distance-independent columns are left
+alone, because they were never biased by the boundary in the first place.
+
+## How much does spatial detail buy
+
+The question the original work asked. Correlate each index against the others
+and the answer is visible without fitting anything: the one-sided indices,
+spatial or not, carry nearly the same information.
+
+```{r corr, fig.cap = "Figure 2. Correlation among competition indices on the example plots. Spatial and non-spatial one-sided indices are close to collinear."}
+keep <- c("bal", "ccfl", "local_bal", "hegyi", "martin_ek", "apa", "csax_rel")
+m <- stats::cor(as.matrix(ci[, ..keep]), use = "pairwise.complete.obs")
+op <- par(mar = c(6, 6, 2, 2))
+image(seq_len(ncol(m)), seq_len(ncol(m)), t(m[nrow(m):1, ]), axes = FALSE,
+      xlab = "", ylab = "", zlim = c(-1, 1),
+      col = grDevices::hcl.colors(21, "Blue-Red 3", rev = TRUE))
+axis(1, seq_len(ncol(m)), colnames(m), las = 2)
+axis(2, seq_len(ncol(m)), rev(rownames(m)), las = 2)
+box()
+par(op)
+```
+
+## Crown profiles
+
+The crown based indices are the reason the package carries a crown model at
+all. One object controls the geometry everywhere.
+
+```{r profiles, fig.cap = "Figure 3. Crown profiles of a 20 m red spruce with a 10 m crown under three profile families."}
+h <- 20; hcb <- 10; lcw <- 4
+zz <- seq(hcb, h, length.out = 200)
+fams <- c("dual_exponent", "variable_exponent", "geometric")
+cols <- c("#2b6a4d", "#b07a2a", "#4a4a4a")
+plot(NA, xlim = c(-2.2, 2.2), ylim = c(hcb - 0.5, h + 0.5),
+     xlab = "Crown radius (m)", ylab = "Height above ground (m)", bty = "l")
+for (k in seq_along(fams)) {
+  p <- crown_profile(fams[k])
+  r <- crown_radius_at(p, zz, lcw, h, hcb, widest = 0.8,
+                       up_exp = 3, lo_exp = 3, shape = "g", cr = 0.5, hw = 0)
+  lines(r, zz, col = cols[k], lwd = 2)
+  lines(-r, zz, col = cols[k], lwd = 2)
+}
+legend("topright", fams, col = cols, lwd = 2, bty = "n")
+```
+
+`crown_profile_info()` states the provenance of the constants, which matters
+because the `variable_exponent` coefficients shipped here are a calibration to
+the package's own defaults rather than a field fit.
+
+```{r}
+crown_profile_info(crown_profile("variable_exponent"))[, c("constant", "value")]
+```
+
+## Adding species
+
+```{r}
+tr <- species_traits(data.frame(
+  code = c("DF", "WH"), sp_type = "SW",
+  sg = c(0.45, 0.42), shade = c(2.78, 4.83),
+  widest = 0.75, up_exp = 3, lo_exp = 3, shape = "g"))
+tr[tr$code %in% c("DF", "WH"), c("code", "sp_type", "sg", "shade", "shape")]
+```
+
+Only `code` and `sp_type` are required. Anything left out takes the softwood or
+hardwood default, which is also what an unrecognised code falls back to, with a
+message rather than silently.
