@@ -32,9 +32,24 @@ the crown profile is scaled to.
 \details{
 Both use the power forms of the Acadian variant,
 MCW = a1 * DBH^a2 and LCW = MCW / (b1 * DBH^b2), with MCW and LCW in m and
-DBH in cm. Coefficients come from the species trait table, so a species with
-no local coefficients falls back to the softwood or hardwood default rather
-than failing.
+DBH in cm. These are Eq. 1 and Eq. 2 of Russell and Weiskittel (2011).
+Coefficients come from the species trait table, so a species with no local
+coefficients falls back to the softwood or hardwood default rather than
+failing.
+
+Eq. 3 of the same paper adds crown ratio to the denominator,
+LCW = MCW / (c1 * DBH^c2 * CR^c3), and fits better for 13 of the 15 species.
+It is not shipped here. The Acadian implementation that this package ports
+and the published coefficient table as machine-extracted disagree on the
+sign of the diameter exponent for several species, and on the value for
+yellow birch, and that discrepancy is unresolved against the rendered paper.
+Supplying the published coefficients through the `extra` argument of
+[species_traits()] is the intended route once a reader has checked them.
+
+`largest_crown_width()` caps its result at maximum crown width. With the
+shipped coefficients the ratio form stays below one over any realistic
+diameter, so the cap binds only below about 1 cm DBH; it is a guard against
+a user supplied coefficient set, not a correction to these.
 }
 \examples{
 max_crown_width(c(10, 25, 40), c("RS", "RS", "SM"))

@@ -73,8 +73,11 @@ regular_polygon <- function(cx, cy, r, n = 72L) {
 #'   (2011) found an optimum of 1 for diameter weighting and 2 for crown
 #'   surface width weighting.
 #' @param boundary Plot boundary. `"circle"` uses `plot_radius`, `"convex"`
-#'   uses the convex hull of the stems, `"none"` uses a square of side
-#'   four times the plot radius.
+#'   uses the convex hull of the stems, `"square"` uses a square of half width
+#'   `extent` centred on plot centre, and `"none"` uses a square sized to
+#'   contain every stem.
+#' @param extent Half width, m, of the square domain when
+#'   `boundary = "square"`.
 #' @param n_vertices Vertices used to approximate a circular boundary.
 #' @param normalize Rescale each plot's polygon areas so that they sum to the
 #'   plot area. Default `FALSE`.
@@ -90,8 +93,8 @@ regular_polygon <- function(cx, cy, r, n = 72L) {
 #' st <- pef_stand()
 #' head(apa(st, weight = "dbh", exponent = 2))
 apa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
-                boundary = c("circle", "convex", "none"), n_vertices = 180L,
-                normalize = FALSE) {
+                boundary = c("circle", "convex", "square", "none"),
+                n_vertices = 180L, extent = 25, normalize = FALSE) {
   stopifnot(inherits(stand, "stand"))
   if (!is_spatial(stand)) stop("this stand has no stem coordinates.", call. = FALSE)
   boundary <- match.arg(boundary)
@@ -118,6 +121,8 @@ apa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
         h <- grDevices::chull(x, y)
         cbind(x[h], y[h])
       },
+      square = cbind(c(-extent, extent, extent, -extent),
+                     c(-extent, -extent, extent, extent)),
       none = {
         r <- max(abs(c(x, y))) * 2
         cbind(c(-r, r, r, -r), c(-r, -r, r, r))
@@ -182,6 +187,11 @@ apa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
 #' @inheritParams apa
 #' @param resolution Cell size, m. Default 0.25. Halving it quadruples the
 #'   cost and changes APA in the third significant figure.
+#' @param align Grid alignment. `"center"` samples cell centres, so the sampled
+#'   points tile the domain exactly and the areas sum to it. `"node"` samples
+#'   grid nodes from `-extent` to `extent` inclusive, which is the convention of
+#'   the original Acadian rasterised APA code and counts the boundary ring of
+#'   half cells at full weight. Use `"node"` only to reproduce that code.
 #' @param dr_mod Apply the directional modification.
 #' @param dr_max Maximum directional multiplier on the weight. Default 2.
 #' @param dr_bearing Bearing, degrees, of maximum competitive reach. `NULL`
@@ -197,9 +207,12 @@ apa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
 #' Voronoi diagram. The Professional Geographer 56: 223-239.
 #' @export
 rapa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
-                 resolution = 0.25, boundary = c("circle", "convex", "none"),
+                 resolution = 0.25,
+                 boundary = c("circle", "convex", "square", "none"),
+                 extent = 25, align = c("center", "node"),
                  dr_mod = FALSE, dr_max = 2, dr_bearing = NULL,
                  weight_mode = c("multiplicative", "additive")) {
+  align <- match.arg(align)
   stopifnot(inherits(stand, "stand"))
   if (!is_spatial(stand)) stop("this stand has no stem coordinates.", call. = FALSE)
   boundary <- match.arg(boundary)
@@ -214,9 +227,13 @@ rapa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
     # length scale as the grid, and so the multiplicative mode is invariant to
     # the units of the weighting variable
     w <- w / mean(w)
-    r <- plot_radius[1L]
+    r <- if (boundary == "square") extent else plot_radius[1L]
     if (is.na(r)) r <- max(sqrt(x^2 + y^2)) + 1
-    gx <- seq(-r + resolution / 2, r - resolution / 2, by = resolution)
+    gx <- if (align == "node") {
+      seq(-r, r, by = resolution)
+    } else {
+      seq(-r + resolution / 2, r - resolution / 2, by = resolution)
+    }
     gy <- gx
     g <- expand.grid(gx = gx, gy = gy)
     keep <- switch(boundary,
@@ -225,6 +242,7 @@ rapa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
         h <- grDevices::chull(x, y)
         point_in_poly(g$gx, g$gy, cbind(x[h], y[h]))
       },
+      square = rep(TRUE, nrow(g)),
       none = rep(TRUE, nrow(g))
     )
     g <- g[keep, , drop = FALSE]

@@ -81,6 +81,39 @@ st_flat <- as_stand(my_inventory, plot = "plot", tree = "tree",
 competition_indices(st_flat)
 ```
 
+## Verification against the original implementation
+
+The package is a rewrite, so it is checked against the scripts it replaces
+rather than only against itself. `inst/scripts/regression_vs_original.R` runs
+the original CI.R, SPP.R and Acadian pipeline on the Penobscot plot and compares
+every tree. On R 4.5.2:
+
+| Quantity | Agreement |
+|:---|:---|
+| Maximum crown width, maximum crown area, crown competition factor | identical |
+| Hegyi index | identical (1.7e-14 percent) |
+| Spurr point density | identical (2.8e-14 percent) |
+| Angle gauge competitor count | identical |
+| Rasterised APA, `align = "node"` | identical |
+| Crown volume, measured radii | 6e-6 percent |
+| Plot basal area | 2.3e-4 percent |
+| Crown surface area, measured radii | 0.26 percent |
+| Basal area and crown competition factor of larger trees | one tied diameter pair |
+| Crown surface area and volume from predicted rather than measured crown width | different input, not different method |
+
+The last two rows are deliberate. `forestCI` treats trees of equal diameter
+symmetrically, so a tied pair each see only the trees strictly larger than both,
+where a plain cumulative sum gives the second one of the pair the first one's
+basal area as well. And the original takes crown radius from the four cardinal
+field measurements while the package predicts largest crown width from diameter;
+feed the package the measured radii and the geometry agrees to a quarter of a
+percent.
+
+Two changes came out of this comparison rather than out of the test suite: crown
+dimensions are integrated adaptively by default, because a fixed Simpson rule
+was up to 3.7 percent low where the crown profile turns vertical at the tip, and
+`rapa()` can align its grid on nodes rather than cell centres.
+
 ## Crown profiles
 
 Every crown based index reads its geometry from one object, so changing the

@@ -9,7 +9,9 @@ rapa(
   weight = c("none", "dbh", "lcw", "csa"),
   exponent = 1,
   resolution = 0.25,
-  boundary = c("circle", "convex", "none"),
+  boundary = c("circle", "convex", "square", "none"),
+  extent = 25,
+  align = c("center", "node"),
   dr_mod = FALSE,
   dr_max = 2,
   dr_bearing = NULL,
@@ -30,8 +32,18 @@ surface width weighting.}
 cost and changes APA in the third significant figure.}
 
 \item{boundary}{Plot boundary. `"circle"` uses `plot_radius`, `"convex"`
-uses the convex hull of the stems, `"none"` uses a square of side
-four times the plot radius.}
+uses the convex hull of the stems, `"square"` uses a square of half width
+`extent` centred on plot centre, and `"none"` uses a square sized to
+contain every stem.}
+
+\item{extent}{Half width, m, of the square domain when
+`boundary = "square"`.}
+
+\item{align}{Grid alignment. `"center"` samples cell centres, so the sampled
+points tile the domain exactly and the areas sum to it. `"node"` samples
+grid nodes from `-extent` to `extent` inclusive, which is the convention of
+the original Acadian rasterised APA code and counts the boundary ring of
+half cells at full weight. Use `"node"` only to reproduce that code.}
 
 \item{dr_mod}{Apply the directional modification.}
 

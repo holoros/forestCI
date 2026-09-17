@@ -143,3 +143,25 @@ test_that("unknown species fall back rather than fail", {
     "not in the trait table")
   expect_true(all(is.finite(s$trees$mcw)))
 })
+
+test_that("node aligned rAPA covers the inclusive grid", {
+  # node alignment samples -extent to +extent inclusive, so it has one more
+  # point per axis than centre alignment and counts a larger nominal area
+  rn <- rapa(st, weight = "none", resolution = 0.5, boundary = "square",
+             extent = 25, align = "node")
+  rc <- rapa(st, weight = "none", resolution = 0.5, boundary = "square",
+             extent = 25, align = "center")
+  tot_n <- tapply(rn$rapa, rn$plot_id, sum)
+  tot_c <- tapply(rc$rapa, rc$plot_id, sum)
+  expect_equal(as.numeric(tot_c), rep(50^2, length(tot_c)), tolerance = 1e-6)
+  expect_equal(as.numeric(tot_n), rep(101^2 * 0.25, length(tot_n)),
+               tolerance = 1e-6)
+  m <- merge(rn, rc, by = c("plot_id", "tree_id"), suffixes = c("_n", "_c"))
+  expect_gt(stats::cor(m$rapa_n, m$rapa_c), 0.999)
+})
+
+test_that("square and circular APA domains differ only by the clipped corners", {
+  ac <- apa(st, weight = "none", boundary = "circle")
+  aq <- apa(st, weight = "none", boundary = "square", extent = 25)
+  expect_true(all(aq$apa >= ac$apa - 1e-6))
+})

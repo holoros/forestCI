@@ -47,3 +47,31 @@ test_that("largest crown width never exceeds maximum crown width", {
     expect_true(all(l <= m + 1e-9), info = sp)
   }
 })
+
+test_that("adaptive integration beats Simpson on a sharply pointed crown", {
+  # a gothic dome with a high exponent turns vertical at the apex, which is the
+  # case a fixed rule under-integrates
+  p <- crown_profile("dual_exponent")
+  a <- crown_dimensions(p, lcw = 4, height = 20, hcb = 10, widest = 0.8,
+                        up_exp = 5, lo_exp = 5, shape = "g",
+                        method = "adaptive")
+  s1 <- crown_dimensions(p, lcw = 4, height = 20, hcb = 10, widest = 0.8,
+                         up_exp = 5, lo_exp = 5, shape = "g",
+                         method = "simpson", n_sub = 200L)
+  s2 <- crown_dimensions(p, lcw = 4, height = 20, hcb = 10, widest = 0.8,
+                         up_exp = 5, lo_exp = 5, shape = "g",
+                         method = "simpson", n_sub = 4000L)
+  expect_true(all(is.finite(unlist(a))))
+  # Simpson converges up toward the adaptive value as it is refined
+  expect_lt(abs(s2$csa - a$csa), abs(s1$csa - a$csa))
+  expect_equal(s2$cv, a$cv, tolerance = 1e-4)
+})
+
+test_that("adaptive integration still reproduces the closed form solids", {
+  p <- crown_profile("geometric", solid = "cone")
+  R <- 2; L <- 8
+  d <- crown_dimensions(p, lcw = 2 * R, height = 20, hcb = 20 - L,
+                        widest = 1, method = "adaptive")
+  expect_equal(d$csa, pi * R * sqrt(R^2 + L^2), tolerance = 1e-5)
+  expect_equal(d$cv, pi * R^2 * L / 3, tolerance = 1e-5)
+})

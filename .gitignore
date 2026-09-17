@@ -6,9 +6,3 @@
 *.Rcheck/
 docs/
 inst/doc
-demo_out/
-*.tar.gz
-*.Rcheck/
-.Rhistory
-.RData
-inst/doc

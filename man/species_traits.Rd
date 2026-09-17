@@ -25,7 +25,13 @@ single step needed to move the package outside the Acadian species pool.
 \details{
 The built-in table covers 43 species codes of the northeastern United States
 and eastern Canada, using the two letter Forest Vegetation Simulator Acadian
-variant codes. Specific gravity and shade tolerance follow the Acadian
+variant codes. Three entries were checked against the Forest Vegetation
+Simulator species crosswalk and Northeast variant overview rather than
+against the source code: `BK` is black locust (*Robinia pseudoacacia* L.),
+`SC` is Scots pine (*Pinus sylvestris* L.), and `PB` is paper birch
+(*Betula papyrifera* Marshall), which is a hardwood. The Acadian source
+classifies `PB` as a softwood, which is an error, and this table corrects
+it. Specific gravity and shade tolerance follow the Acadian
 variant parameter set, shade tolerance itself on the scale of Niinemets and
 Valladares (2006). Crown shape constants (`widest`, `up_exp`, `lo_exp`,
 `shape`) follow the parameterisation of Waskiewicz (2011). Maximum and

@@ -17,7 +17,8 @@ crown_dimensions(
   shape = "e",
   cr = NULL,
   hw = 0,
-  n_sub = 200L
+  n_sub = 200L,
+  method = c("adaptive", "simpson")
 )
 }
 \arguments{
@@ -46,8 +47,16 @@ from the apex.}
 \item{hw}{Hardwood indicator, 0 or 1, used by the `"variable_exponent"`
 family.}
 
-\item{n_sub}{Number of subdivisions used by the numerical integration.
-Raising it costs time and buys accuracy in the fourth decimal place.}
+\item{n_sub}{Number of subdivisions used by `method = "simpson"`.}
+
+\item{method}{Integration rule. `"adaptive"` calls [stats::integrate()] once
+per tree and per crown section, which handles the vertical tangent that the
+profile develops at the tip of the crown and is accurate to the default
+tolerance of that routine. `"simpson"` uses a fixed composite Simpson rule
+over `n_sub` subdivisions, which is several times faster and vectorised
+over trees, but converges slowly near that tangent and can be a few percent
+low on the most sharply pointed crowns. `"adaptive"` reproduces the
+integration used by the original Acadian competition index scripts.}
 }
 \value{
 A `data.frame` with columns `csa` (crown surface area, m2),

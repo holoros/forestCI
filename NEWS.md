@@ -1,3 +1,41 @@
+# forestCI 0.1.1
+
+Verification release. The package was run against the original Acadian
+competition index scripts (CI.R, SPP.R, AcadianGY, Run.R) on the Penobscot
+plot, tree by tree. Seven quantities now agree to machine precision, three to
+rounding, and the two that differ do so by design. Closing the last two gaps
+required two real changes to the package.
+
+* `crown_dimensions()` gains `method`. The new default `"adaptive"` integrates
+  each crown section with [stats::integrate()], which is what the original
+  scripts do and which handles the vertical tangent the profile develops at the
+  crown tip. The previous fixed composite Simpson rule is still available as
+  `method = "simpson"` and is several times faster, but it was up to 3.7 percent
+  low on the most sharply pointed crowns. With the adaptive rule crown surface
+  area agrees with the original to 0.26 percent and crown volume to 6e-6
+  percent.
+* `rapa()` gains `align`. The original rasterises on grid nodes from `-extent`
+  to `+extent` inclusive rather than on cell centres. `align = "node"`
+  reproduces that grid exactly, and with it rasterised APA is bit-identical to
+  the original. The default stays `"center"`, where the sampled points tile the
+  domain and the areas sum to it.
+* `rapa()` and `apa()` gain `boundary = "square"` with `extent`, so a square
+  domain can be specified directly rather than inferred from the stems.
+* Species table corrections and confirmations, all against external sources
+  rather than the code being tested: paper birch (`PB`) is a hardwood and the
+  `"SW"` entry in the Acadian source is an error; `BK` is black locust
+  (*Robinia pseudoacacia* L.) and `SC` is Scots pine (*Pinus sylvestris* L.),
+  both confirmed twice in the Forest Vegetation Simulator species crosswalk and
+  the Northeast variant overview.
+* `largest_crown_width()` documentation now states which published equation it
+  implements. It is Eq. 2 of Russell and Weiskittel (2011), the form without a
+  crown ratio term. Eq. 3 of the same paper adds crown ratio in the denominator
+  and fits better for 13 of the 15 species; it is not shipped, because the
+  coefficient signs in the Acadian implementation and in the published table as
+  machine-extracted disagree and the discrepancy is unresolved.
+* `inst/scripts/regression_vs_original.R` runs the whole comparison and is the
+  script to re-run after any change to the crown or neighbourhood code.
+
 # forestCI 0.1.0
 
 First release.

@@ -250,8 +250,15 @@ crown_radius_at <- function(profile, height_above_ground, lcw, height, hcb,
 #'   `lo_exp` and `shape` are taken from `traits` and any values passed
 #'   directly are ignored.
 #' @param traits Trait table, normally from [species_traits()].
-#' @param n_sub Number of subdivisions used by the numerical integration.
-#'   Raising it costs time and buys accuracy in the fourth decimal place.
+#' @param n_sub Number of subdivisions used by `method = "simpson"`.
+#' @param method Integration rule. `"adaptive"` calls [stats::integrate()] once
+#'   per tree and per crown section, which handles the vertical tangent that the
+#'   profile develops at the tip of the crown and is accurate to the default
+#'   tolerance of that routine. `"simpson"` uses a fixed composite Simpson rule
+#'   over `n_sub` subdivisions, which is several times faster and vectorised
+#'   over trees, but converges slowly near that tangent and can be a few percent
+#'   low on the most sharply pointed crowns. `"adaptive"` reproduces the
+#'   integration used by the original Acadian competition index scripts.
 #' @return A `data.frame` with columns `csa` (crown surface area, m2),
 #'   `csa_upper`, `csa_lower`, `cv` (crown volume, m3) and `cpa` (crown
 #'   projection area, m2).
@@ -262,7 +269,9 @@ crown_radius_at <- function(profile, height_above_ground, lcw, height, hcb,
 crown_dimensions <- function(profile, lcw, height, hcb,
                              species = NULL, traits = species_traits(),
                              widest = 0.7, up_exp = 3, lo_exp = 3, shape = "e",
-                             cr = NULL, hw = 0, n_sub = 200L) {
+                             cr = NULL, hw = 0, n_sub = 200L,
+                             method = c("adaptive", "simpson")) {
+  method <- match.arg(method)
   stopifnot(inherits(profile, "crown_profile"))
   n <- max(length(lcw), length(height), length(hcb))
   lcw <- rep_len(lcw, n); height <- rep_len(height, n); hcb <- rep_len(hcb, n)
@@ -287,7 +296,49 @@ crown_dimensions <- function(profile, lcw, height, hcb,
   ucl <- widest * cl
   lcl <- cl - ucl
 
-  # Gauss-Legendre-free composite Simpson on z in (0, 1), vectorised over trees
+  if (method == "adaptive") {
+    sec_adaptive <- function(section, seclen, i) {
+      if (!is.finite(seclen[i]) || seclen[i] <= 0) return(c(0, 0))
+      rfun <- function(z) {
+        rmax[i] * rel_radius(profile, z, section, up_exp[i], lo_exp[i],
+                             shape[i], cr[i], hw[i])
+      }
+      dfun <- function(z) {
+        rmax[i] * rel_radius_deriv(profile, z, section = section,
+                                   up_exp = up_exp[i], lo_exp = lo_exp[i],
+                                   shape = shape[i], cr = cr[i], hw = hw[i])
+      }
+      # integrate over length along the section axis, l = z * seclen
+      area_f <- function(l) {
+        z <- l / seclen[i]
+        rfun(z) * sqrt(1 + (dfun(z) / seclen[i])^2)
+      }
+      vol_f <- function(l) rfun(l / seclen[i])^2
+      a <- tryCatch(stats::integrate(area_f, 0, seclen[i],
+                                     subdivisions = 1000L,
+                                     rel.tol = 1e-8, stop.on.error = FALSE)$value,
+                    error = function(e) NA_real_)
+      v <- tryCatch(stats::integrate(vol_f, 0, seclen[i],
+                                     subdivisions = 1000L,
+                                     rel.tol = 1e-8, stop.on.error = FALSE)$value,
+                    error = function(e) NA_real_)
+      c(2 * pi * a, pi * v)
+    }
+    up_a <- up_v <- lo_a <- lo_v <- numeric(n)
+    for (i in seq_len(n)) {
+      u <- sec_adaptive("upper", ucl, i); l <- sec_adaptive("lower", lcl, i)
+      up_a[i] <- u[1]; up_v[i] <- u[2]; lo_a[i] <- l[1]; lo_v[i] <- l[2]
+    }
+    return(data.frame(
+      csa       = up_a + lo_a,
+      csa_upper = up_a,
+      csa_lower = lo_a,
+      cv        = up_v + lo_v,
+      cpa       = pi * rmax^2
+    ))
+  }
+
+  # composite Simpson on z in (0, 1), vectorised over trees
   m <- if (n_sub %% 2L == 0L) n_sub else n_sub + 1L
   z <- seq(0, 1, length.out = m + 1L)
   w <- c(1, rep(c(4, 2), length.out = m - 1L), 1) / 3 * (1 / m)

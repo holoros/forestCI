@@ -8,8 +8,9 @@ apa(
   stand,
   weight = c("none", "dbh", "lcw", "csa"),
   exponent = 1,
-  boundary = c("circle", "convex", "none"),
+  boundary = c("circle", "convex", "square", "none"),
   n_vertices = 180L,
+  extent = 25,
   normalize = FALSE
 )
 }
@@ -24,10 +25,14 @@ the name of any numeric column of `stand$trees`.}
 surface width weighting.}
 
 \item{boundary}{Plot boundary. `"circle"` uses `plot_radius`, `"convex"`
-uses the convex hull of the stems, `"none"` uses a square of side
-four times the plot radius.}
+uses the convex hull of the stems, `"square"` uses a square of half width
+`extent` centred on plot centre, and `"none"` uses a square sized to
+contain every stem.}
 
 \item{n_vertices}{Vertices used to approximate a circular boundary.}
+
+\item{extent}{Half width, m, of the square domain when
+`boundary = "square"`.}
 
 \item{normalize}{Rescale each plot's polygon areas so that they sum to the
 plot area. Default `FALSE`.}
