@@ -1,6 +1,6 @@
 Package: forestCI
 Title: Distance-Dependent and Distance-Independent Competition Indices for Forest Stands
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: c(
     person("Aaron", "Weiskittel", email = "aaron.weiskittel@maine.edu",
            role = c("aut", "cre")),

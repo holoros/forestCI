@@ -114,6 +114,23 @@ dimensions are integrated adaptively by default, because a fixed Simpson rule
 was up to 3.7 percent low where the crown profile turns vertical at the tip, and
 `rapa()` can align its grid on nodes rather than cell centres.
 
+## Scale
+
+Timing on one plot at 0.12 trees per m², R 4.5.2, seconds:
+
+| Trees | `ci_distance_independent` | `ci_distance_dependent` | `apa` | `rapa` | `crown_exposure` |
+|---:|---:|---:|---:|---:|---:|
+| 100 | 0.006 | 0.013 | 0.11 | 0.01 | 0.99 |
+| 400 | 0.007 | 0.032 | 0.44 | 0.11 | 4.24 |
+| 1000 | 0.007 | 0.094 | 1.23 | 0.47 | 11.04 |
+
+Crown exposure and area potentially available are the two expensive routines,
+and both are near linear in stand size rather than quadratic, because a
+neighbour that cannot reach the subject is excluded before any geometry is
+evaluated. Both exclusions are exact bounds, so nothing is traded for the speed.
+Open sky view roughly doubles the crown exposure cost; pass `crown_osv = FALSE`
+to skip it.
+
 ## Crown profiles
 
 Every crown based index reads its geometry from one object, so changing the

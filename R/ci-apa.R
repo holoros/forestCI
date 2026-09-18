@@ -129,13 +129,26 @@ apa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
       }
     )
     area <- numeric(n)
+    wmax <- max(w)
     for (i in seq_len(n)) {
       poly <- base_poly
-      for (j in seq_len(n)) {
-        if (i == j) next
-        dx <- x[j] - x[i]; dy <- y[j] - y[i]
-        dij <- sqrt(dx^2 + dy^2)
+      dall <- sqrt((x - x[i])^2 + (y - y[i])^2)
+      ord <- order(dall); ord <- ord[ord != i]
+      # The bisector against neighbour j sits at frac_j * d_ij from the subject,
+      # and frac_j is at least w_i / (w_i + max(w)). Working outward from the
+      # nearest neighbour, once that lower bound exceeds the polygon's own
+      # circumradius no remaining neighbour can cut it, so the loop stops. This
+      # is an exact early exit, not an approximation, and it is what keeps the
+      # cost near linear instead of quadratic in stand size.
+      fmin <- w[i] / (w[i] + wmax)
+      for (j in ord) {
+        dij <- dall[j]
         if (dij == 0) next
+        rpoly <- if (nrow(poly) >= 1L) {
+          max(sqrt((poly[, 1L] - x[i])^2 + (poly[, 2L] - y[i])^2))
+        } else 0
+        if (fmin * dij > rpoly) break
+        dx <- x[j] - x[i]; dy <- y[j] - y[i]
         frac <- w[i] / (w[i] + w[j])
         px <- x[i] + frac * dx
         py <- y[i] + frac * dy

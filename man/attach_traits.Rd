@@ -21,5 +21,7 @@ A `data.table` with the trait columns added.
 Joins the trait table onto trees by species code. Codes with no match fall
 back to the softwood or hardwood default, chosen from `sp_type` when the
 caller supplies one and from the hardwood default otherwise, and the
-substitution is reported once rather than silently.
+substitution is reported once rather than silently. A caller supplied
+`sp_type` survives the fallback: it is the caller's statement about the
+tree, so it is not overwritten by the default row it selected.
 }

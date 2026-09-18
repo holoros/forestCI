@@ -1,3 +1,42 @@
+# forestCI 0.1.2
+
+Stress and scaling release. An 84 probe edge case suite was run over degenerate
+stand sizes, rejected inputs, graceful degradation, ties, neighbourhood rules,
+multi plot stands, weighting options, determinism, scaling and 40 random stands.
+It found one defect and one gap, both fixed. Two performance problems it
+measured are also fixed, and the regression against the original scripts is
+unchanged by any of it.
+
+* **An empty neighbourhood now means zero competition everywhere.** A tree with
+  no competitor in a stand where other trees have competitors already returned
+  zero. A stand in which no tree has a competitor returned `NA` for every
+  distance-dependent index. Those two cases now agree, and only `mean_dist`,
+  which is genuinely undefined without a competitor, stays `NA`.
+* **`as_stand()` gains `sp_type`.** A caller who knows an unrecognised species
+  is a softwood had no way to say so, and every unknown code fell back to the
+  hardwood defaults. A supplied `sp_type` now steers that fallback and survives
+  it. Recognised codes still take their type from the trait table.
+* **Crown exposure is about twenty times faster on a large stand.** A neighbour
+  can only overtop a facet when the two crowns overlap horizontally, and a ray
+  can only be blocked within its own horizontal travel. Restricting the
+  neighbour set by those two exact bounds takes 1000 trees from 224 s to 10.5 s
+  and turns the cost from quadratic into roughly linear. No result changes.
+* **Area potentially available is about eight times faster.** Neighbours are now
+  clipped in order of distance and the loop stops once the nearest remaining
+  bisector cannot reach the polygon, which is an exact early exit. 1000 trees
+  goes from 9.0 s to 1.1 s. No result changes.
+
+Timing on a stand at 0.12 trees per m2, seconds:
+
+| Trees | independent | dependent | apa | rapa | crown exposure |
+|---:|---:|---:|---:|---:|---:|
+| 100 | 0.006 | 0.013 | 0.11 | 0.01 | 0.99 |
+| 400 | 0.007 | 0.032 | 0.44 | 0.11 | 4.24 |
+| 1000 | 0.007 | 0.094 | 1.23 | 0.47 | 11.04 |
+
+99 tests passing, R CMD check clean, all 84 stress probes passing, and the
+regression against the original scripts identical to 0.1.1 in every row.
+
 # forestCI 0.1.1
 
 Verification release. The package was run against the original Acadian

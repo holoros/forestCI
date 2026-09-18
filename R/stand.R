@@ -12,6 +12,11 @@
 #'   measurement.
 #' @param plot,tree,species,dbh Column names for plot identifier, tree
 #'   identifier, species code and diameter at breast height in cm. Required.
+#' @param sp_type Optional column name holding `"SW"` or `"HW"` per tree. It is
+#'   used only for species codes the trait table does not recognise, where it
+#'   decides whether the softwood or the hardwood default applies. Without it
+#'   an unrecognised code falls back to the hardwood default. Recognised codes
+#'   take their type from the trait table and ignore this column.
 #' @param height,hcb Column names for total height and height to crown base,
 #'   both m. Optional. Crown based indices need them; supply them or supply
 #'   `crown_ratio`.
@@ -48,7 +53,7 @@
 #' st
 as_stand <- function(data,
                      plot = "plot", tree = "tree", species = "species",
-                     dbh = "dbh", height = NULL, hcb = NULL,
+                     dbh = "dbh", sp_type = NULL, height = NULL, hcb = NULL,
                      crown_ratio = NULL, expf = NULL,
                      x = NULL, y = NULL,
                      distance = NULL, azimuth = NULL,
@@ -65,6 +70,14 @@ as_stand <- function(data,
     species = as.character(d[[species]]),
     dbh     = as.numeric(d[[dbh]])
   )
+  if (!is.null(sp_type)) {
+    need_cols(d, sp_type, "`data`")
+    st <- as.character(d[[sp_type]])
+    if (!all(st %in% c("SW", "HW"))) {
+      stop("`sp_type` must be \"SW\" or \"HW\" for every record.", call. = FALSE)
+    }
+    tr[, "sp_type" := st]
+  }
   if (!is.null(year)) {
     tr[, "plot_id" := paste(tr$plot_id, as.character(d[[year]]), sep = ".")]
     tr[, "year" := d[[year]]]

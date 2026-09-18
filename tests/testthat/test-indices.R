@@ -165,3 +165,102 @@ test_that("square and circular APA domains differ only by the clipped corners", 
   aq <- apa(st, weight = "none", boundary = "square", extent = 25)
   expect_true(all(aq$apa >= ac$apa - 1e-6))
 })
+
+test_that("the APA early exit does not change any answer", {
+  set.seed(5)
+  n <- 60; r <- 20
+  th <- stats::runif(n, 0, 2 * pi); rad <- r * 0.9 * sqrt(stats::runif(n))
+  d <- data.frame(plot = "a", tree = as.character(seq_len(n)), species = "RS",
+                  dbh = stats::runif(n, 10, 50),
+                  x = rad * cos(th), y = rad * sin(th))
+  s <- as_stand(d, plot = "plot", tree = "tree", species = "species",
+                dbh = "dbh", x = "x", y = "y", plot_radius = r, quiet = TRUE)
+  a0 <- apa(s, weight = "none")
+  a1 <- apa(s, weight = "dbh", exponent = 2)
+  expect_equal(sum(a0$apa), pi * r^2, tolerance = 0.01)
+  expect_true(all(a0$apa > 0))
+  expect_true(all(a1$apa > 0))
+  expect_true(all(a0$apa <= pi * r^2 + 1e-6))
+})
+
+test_that("crown exposure is unchanged by the neighbour restriction", {
+  far <- data.frame(plot = "a", tree = c("1", "2"), species = "RS",
+                    dbh = c(25, 25), x = c(0, 80), y = c(0, 0),
+                    height = 18, hcb = 9)
+  sf <- as_stand(far, plot = "plot", tree = "tree", species = "species",
+                 dbh = "dbh", height = "height", hcb = "hcb", x = "x", y = "y",
+                 plot_radius = 60, quiet = TRUE)
+  cf <- crown_exposure(sf, n_depth = 8L, n_azimuth = 24L, osv = TRUE,
+                       ray_steps = 10L)
+  expect_equal(cf$csax_rel, c(1, 1), tolerance = 0.02)
+  expect_true(all(cf$osv_rel > 0.4))
+
+  tight <- data.frame(plot = "a", tree = as.character(1:4), species = "RS",
+                      dbh = c(45, 15, 15, 15),
+                      x = c(0, 1.5, -1.5, 0), y = c(0, 0, 0, 1.5),
+                      height = c(24, 12, 12, 12), hcb = c(10, 6, 6, 6))
+  stt <- as_stand(tight, plot = "plot", tree = "tree", species = "species",
+                  dbh = "dbh", height = "height", hcb = "hcb", x = "x", y = "y",
+                  plot_radius = 12, quiet = TRUE)
+  ct <- crown_exposure(stt, n_depth = 8L, n_azimuth = 24L, osv = FALSE)
+  expect_gt(ct$csax_rel[ct$tree_id == "1"], 0.9)
+  expect_lt(min(ct$csax_rel[ct$tree_id != "1"]), 0.999)
+})
+
+test_that("a caller supplied sp_type steers the fallback and survives it", {
+  d <- data.frame(plot = "a", tree = c("1", "2"), species = c("ZZZ", "ZZZ"),
+                  typ = c("SW", "HW"), dbh = c(20, 20), expf = 10)
+  s <- as_stand(d, plot = "plot", tree = "tree", species = "species",
+                dbh = "dbh", sp_type = "typ", expf = "expf", quiet = TRUE)
+  expect_identical(s$trees$sp_type, c("SW", "HW"))
+  expect_equal(length(unique(s$trees$widest)), 2L)
+
+  # a recognised code takes its type from the trait table, not from the caller
+  d2 <- data.frame(plot = "a", tree = c("1", "2"), species = c("RS", "SM"),
+                   typ = c("HW", "SW"), dbh = c(20, 20), expf = 10)
+  s2 <- as_stand(d2, plot = "plot", tree = "tree", species = "species",
+                 dbh = "dbh", sp_type = "typ", expf = "expf", quiet = TRUE)
+  expect_identical(s2$trees$sp_type, c("SW", "HW"))
+
+  expect_error(
+    as_stand(data.frame(plot = "a", tree = "1", species = "RS",
+                        typ = "conifer", dbh = 20, expf = 10),
+             plot = "plot", tree = "tree", species = "species", dbh = "dbh",
+             sp_type = "typ", expf = "expf", quiet = TRUE),
+    "SW")
+})
+
+test_that("an empty neighbourhood means zero competition, not unknown", {
+  # six trees far enough apart that none tallies another
+  d <- data.frame(plot = "a", tree = as.character(1:6), species = "RS",
+                  dbh = c(12, 18, 24, 30, 36, 42),
+                  x = c(-40, -20, 0, 20, 40, 0),
+                  y = c(-40, 20, 0, -20, 40, 45),
+                  height = 18, hcb = 9)
+  s <- as_stand(d, plot = "plot", tree = "tree", species = "species",
+                dbh = "dbh", height = "height", hcb = "hcb", x = "x", y = "y",
+                plot_radius = 60, quiet = TRUE)
+  nb <- neighbors(s, method = "radius", radius = 0.5)
+  expect_equal(nrow(nb), 0L)
+  v <- ci_distance_dependent(s, nb = nb,
+                             indices = c("hegyi", "martin_ek", "spurr",
+                                         "local_ba", "local_bal", "n_comp",
+                                         "mean_dist"))
+  expect_equal(v$hegyi, rep(0, 6))
+  expect_equal(v$martin_ek, rep(0, 6))
+  expect_equal(v$n_comp, rep(0, 6))
+  expect_true(all(is.na(v$mean_dist)))
+  expect_true(all(v$local_ba > 0))          # a tree still occupies its own space
+  expect_equal(v$local_bal, rep(0, 6))
+
+  # and it must agree with the per-tree empty case in a stand that has both
+  d2 <- rbind(d, data.frame(plot = "a", tree = "7", species = "RS", dbh = 20,
+                            x = 0.4, y = 0, height = 18, hcb = 9))
+  s2 <- as_stand(d2, plot = "plot", tree = "tree", species = "species",
+                 dbh = "dbh", height = "height", hcb = "hcb", x = "x", y = "y",
+                 plot_radius = 60, quiet = TRUE)
+  v2 <- ci_distance_dependent(s2, radius = 0.5, indices = c("hegyi", "n_comp"))
+  lone <- v2[v2$tree_id %in% c("1", "2", "4", "5", "6"), ]
+  expect_equal(lone$hegyi, rep(0, 5))
+  expect_equal(lone$n_comp, rep(0, 5))
+})

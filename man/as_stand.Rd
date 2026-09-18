@@ -10,6 +10,7 @@ as_stand(
   tree = "tree",
   species = "species",
   dbh = "dbh",
+  sp_type = NULL,
   height = NULL,
   hcb = NULL,
   crown_ratio = NULL,
@@ -33,6 +34,12 @@ measurement.}
 
 \item{plot, tree, species, dbh}{Column names for plot identifier, tree
 identifier, species code and diameter at breast height in cm. Required.}
+
+\item{sp_type}{Optional column name holding `"SW"` or `"HW"` per tree. It is
+used only for species codes the trait table does not recognise, where it
+decides whether the softwood or the hardwood default applies. Without it
+an unrecognised code falls back to the hardwood default. Recognised codes
+take their type from the trait table and ignore this column.}
 
 \item{height, hcb}{Column names for total height and height to crown base,
 both m. Optional. Crown based indices need them; supply them or supply

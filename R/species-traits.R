@@ -107,7 +107,9 @@ type_defaults <- function(tr) {
 #' Joins the trait table onto trees by species code. Codes with no match fall
 #' back to the softwood or hardwood default, chosen from `sp_type` when the
 #' caller supplies one and from the hardwood default otherwise, and the
-#' substitution is reported once rather than silently.
+#' substitution is reported once rather than silently. A caller supplied
+#' `sp_type` survives the fallback: it is the caller's statement about the
+#' tree, so it is not overwritten by the default row it selected.
 #'
 #' @param trees A `data.frame` or `data.table` with a `species` column and,
 #'   optionally, an `sp_type` column.
@@ -143,6 +145,12 @@ attach_traits <- function(trees, traits = species_traits(), quiet = FALSE) {
       v <- traits[[cl]][idx]
       v[is.na(idx)] <- defaults[[cl]][fb_idx][is.na(idx)]
       trees[, (cl) := v]
+    }
+    # a caller supplied sp_type is the caller's statement about the tree, so it
+    # survives the fallback rather than being overwritten by the default row
+    if ("sp_type" %in% trait_cols) {
+      keep <- is.na(idx)
+      trees[keep, "sp_type" := fallback_type[keep]]
     }
   } else {
     for (cl in trait_cols) trees[, (cl) := traits[[cl]][idx]]

@@ -128,10 +128,20 @@ crown_exposure <- function(stand, profile = crown_profile(),
       fs <- rep(slope, times = n_azimuth)
       fth <- rep(az, each = length(rvec))
 
-      others <- p[-i, ]
+      # A neighbour can only overtop a facet of the subject if their crowns
+      # overlap horizontally, so only trees within the sum of the two crown
+      # radii can touch the vertical test. This is exact, not a heuristic, and
+      # it is what keeps the routine from being quadratic in stand size.
+      dij <- sqrt((p$x - tt$x)^2 + (p$y - tt$y)^2)
+      sel_z <- which(dij > 0 & dij < (rmax + p$lcw / 2))
+      others <- p[sel_z, ]
       if (nrow(others) == 0L) {
         csax[i] <- sum(fa); cpax[i] <- cpa[i]
-        if (osv) osvv[i] <- sum(fa)
+        if (osv) {
+          osvv[i] <- sum(fa) * ray_sky_fraction(profile, tt, p, dij, fx, fy, fz,
+                                                fth, fs, rmax, ray_steps,
+                                                ray_length)
+        }
         next
       }
       zmat <- crown_surface_z(profile, fx, fy, others)
@@ -145,9 +155,18 @@ crown_exposure <- function(stand, profile = crown_profile(),
                                                       n_depth, n_azimuth)
 
       if (osv) {
-        ok <- ray_escapes(profile, fx[exposed], fy[exposed], fz[exposed],
-                          fth[exposed], fs[exposed], others,
-                          ray_steps, ray_length)
+        # rays leave along the outward normal, so their horizontal travel is
+        # ray_length times the radial component of that normal, never more
+        horiz <- ray_length * max(abs(fs) / sqrt(1 + fs^2), na.rm = TRUE)
+        sel_r <- which(dij > 0 & dij < (rmax + horiz + p$lcw / 2))
+        others_r <- p[sel_r, ]
+        ok <- if (nrow(others_r) == 0L) {
+          rep(TRUE, sum(exposed))
+        } else {
+          ray_escapes(profile, fx[exposed], fy[exposed], fz[exposed],
+                      fth[exposed], fs[exposed], others_r,
+                      ray_steps, ray_length)
+        }
         osvv[i] <- sum(fa[exposed][ok])
       }
     }
@@ -162,6 +181,18 @@ crown_exposure <- function(stand, profile = crown_profile(),
   out <- data.table::rbindlist(res)
   if (!osv) out[, c("osv", "osv_rel") := NULL]
   out[]
+}
+
+# When no crown overlaps the subject vertically, its facets are all exposed,
+# but a ray leaving along the outward normal can still enter a crown further
+# off. This returns the fraction of facets whose ray escapes.
+ray_sky_fraction <- function(profile, tt, p, dij, fx, fy, fz, fth, fs, rmax,
+                             ray_steps, ray_length) {
+  horiz <- ray_length * max(abs(fs) / sqrt(1 + fs^2), na.rm = TRUE)
+  sel <- which(dij > 0 & dij < (rmax + horiz + p$lcw / 2))
+  if (!length(sel)) return(1)
+  mean(ray_escapes(profile, fx, fy, fz, fth, fs, p[sel, ],
+                   ray_steps, ray_length))
 }
 
 exposed_projection_fraction <- function(profile, tt, others, n_depth, n_azimuth) {

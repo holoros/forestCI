@@ -90,7 +90,20 @@ ci_distance_dependent <- function(stand, nb = NULL,
 
   base <- stand$trees[, c("plot_id", "tree_id"), with = FALSE]
   if (nrow(nb) == 0L) {
-    for (i in indices) base[, (i) := NA_real_]
+    # No tree in the stand has a competitor. That is zero competition, not
+    # unknown competition, and it must agree with what a single tree with an
+    # empty neighbourhood gets when other trees do have one. Only mean distance
+    # to a competitor is genuinely undefined.
+    for (i in indices) {
+      base[, (i) := if (identical(i, "mean_dist")) NA_real_ else 0]
+    }
+    if ("local_ba" %in% indices) {
+      nb_area <- attr(nb, "nb_area_ha")
+      own <- stand$trees$ba_m2
+      base[, "local_ba" := if (is.null(nb_area) || is.na(nb_area)) {
+        own * stand$trees$expf
+      } else own / nb_area]
+    }
     return(base[])
   }
   nb_area <- attr(nb, "nb_area_ha")
