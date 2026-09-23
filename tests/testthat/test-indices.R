@@ -166,6 +166,33 @@ test_that("square and circular APA domains differ only by the clipped corners", 
   expect_true(all(aq$apa >= ac$apa - 1e-6))
 })
 
+test_that("apa_bounded marks the trees whose polygon no neighbour closes", {
+  g <- expand.grid(x = c(-5, 0, 5), y = c(-5, 0, 5))
+  d <- data.frame(plot = "a", tree = as.character(seq_len(9)), species = "RS",
+                  dbh = 20, x = g$x, y = g$y)
+  s <- as_stand(d, plot = "plot", tree = "tree", species = "species",
+                dbh = "dbh", x = "x", y = "y", plot_radius = 12, quiet = TRUE)
+  a <- apa(s, weight = "none")
+  expect_type(a$apa_bounded, "logical")
+  # on a 3 by 3 grid only the centre is closed by neighbours; edge midpoints
+  # have neighbours spanning exactly a half turn, which leaves the cell open
+  expect_identical(a$tree_id[a$apa_bounded], "5")
+  expect_equal(a$apa[a$tree_id == "5"], 25, tolerance = 1e-10)
+
+  a0 <- apa(st, weight = "none")
+  a1 <- apa(st, weight = "dbh", exponent = 2, boundary = "square", extent = 25)
+  m <- merge(a0, a1, by = c("plot_id", "tree_id"))
+  expect_identical(m$apa_bounded.x, m$apa_bounded.y)
+  tr <- merge(st$trees[, c("plot_id", "tree_id", "x", "y")], a0,
+              by = c("plot_id", "tree_id"))
+  for (p in unique(tr$plot_id)) {
+    k <- tr[tr$plot_id == p, ]
+    hull <- k$tree_id[grDevices::chull(k$x, k$y)]
+    expect_false(any(k$apa_bounded[k$tree_id %in% hull]), info = p)
+    expect_true(any(k$apa_bounded), info = p)
+  }
+})
+
 test_that("the APA early exit does not change any answer", {
   set.seed(5)
   n <- 60; r <- 20

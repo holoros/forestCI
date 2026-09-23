@@ -111,12 +111,12 @@ time these quantities have been compared to anything outside the package.
 | Quantity | Agreement |
 |:---|:---|
 | Polygon APA, every tree whose polygon is closed by neighbours | identical (15 of 25 trees, below 1e-10) |
-| Polygon APA, trees with an unbounded polygon | not comparable; the original returns 0 or NA |
+| Polygon APA, trees with an unbounded polygon (`apa_bounded = FALSE`) | not comparable; the original returns 0, NA, or a polygon that excludes the stem |
 | Analytic crown projection area, measured radii | identical (3.8e-13 percent) |
 | Analytic crown surface area, measured radii | 0.264 percent |
 | Exposed crown projection ratio | r = 0.996, stand means within 0.7 percent |
 | Exposed crown surface ratio | r = 0.984, stand means within 3.1 percent |
-| Open sky view, sky fraction | r = 0.834, forestCI 13.5 percent high |
+| Open sky view, sky fraction | r = 0.834 to 0.856, forestCI 13.5 to 16.1 percent high across the original's resolutions |
 
 The last three rows are characterizations rather than certifications, and the
 reason is in the reference. Halving the original's raster cell side from 0.25 m
@@ -125,7 +125,11 @@ individual tree, so it is not a precise reference at the resolution it is
 normally run at. Open sky view differs by construction: `forestCI` casts one ray
 per crown facet along the outward normal, while the original integrates the sky
 fraction over the whole upward hemisphere at each facet, and a single normal ray
-escapes more readily, so the high bias is the expected direction.
+escapes more readily, so the high bias is the expected direction. It is not the
+reference's own discretization: refining the original from 32 facets and 16
+rays per facet (`res1 = 8`, `res2 = 16`) up to `res1 = 32` or `res2 = 32` moves
+its stand mean sky fraction only within 0.4705 to 0.4814, and moves it down, so
+the default setting understates the bias slightly rather than creating it.
 
 The 38 species codes that carry an FIA species code are checked against a full
 FIA `REF_SPECIES` export by `inst/scripts/validate_crosswalk_external.R`. All 38

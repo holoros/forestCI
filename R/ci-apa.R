@@ -66,6 +66,21 @@ regular_polygon <- function(cx, cy, r, n = 72L) {
 #' rather than by a neighbour; `edge_flag()` marks them and
 #' `competition_indices()` sets their APA to `NA` when `edge = "exclude"`.
 #'
+#' @section Unbounded polygons:
+#' A tree whose neighbours all lie within a half plane of it, which is every
+#' tree on the convex hull of the stems, has a polygon that no neighbour
+#' closes. Its growing space is undefined in the plane and the area returned is
+#' whatever the plot boundary leaves, so it depends on `boundary` in a way a
+#' closed polygon's does not. `apa_bounded` is `FALSE` for these trees. It is a
+#' property of the stem map alone, the same under every `weight`, `exponent`
+#' and `boundary`, because a displaced bisector moves a half plane without
+#' turning it. The original Acadian ENGINE has no answer for these trees: it
+#' returns exactly zero, `NA`, or the area of a polygon that does not contain
+#' the subject tree. On the Penobscot example plot it does so for all 10 of the
+#' 25 trees that `apa_bounded` marks, and agrees with `apa()` to a relative
+#' difference below 1e-10 on the other 15. Filter on `apa_bounded` to compare
+#' with that code, or to keep boundary dependent values out of an analysis.
+#'
 #' @param stand A `stand` carrying stem coordinates.
 #' @param weight Weighting variable: `"none"`, `"dbh"`, `"lcw"`, `"csa"`, or
 #'   the name of any numeric column of `stand$trees`.
@@ -82,8 +97,10 @@ regular_polygon <- function(cx, cy, r, n = 72L) {
 #' @param normalize Rescale each plot's polygon areas so that they sum to the
 #'   plot area. Default `FALSE`.
 #'
-#' @return A `data.table` with `plot_id`, `tree_id`, `apa` (m2) and
-#'   `apa_share`, the polygon area as a proportion of plot area.
+#' @return A `data.table` with `plot_id`, `tree_id`, `apa` (m2),
+#'   `apa_share`, the polygon area as a proportion of plot area, and
+#'   `apa_bounded`, `TRUE` when neighbours close the polygon on every side and
+#'   `FALSE` when it is closed only by the plot boundary.
 #' @references
 #' Moore, J.A., Budelsky, C.A., Schlesinger, R.C. (1973) A new index
 #' representing individual tree competitive status. Canadian Journal of Forest
@@ -129,10 +146,20 @@ apa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
       }
     )
     area <- numeric(n)
+    bounded <- logical(n)
     wmax <- max(w)
     for (i in seq_len(n)) {
       poly <- base_poly
       dall <- sqrt((x - x[i])^2 + (y - y[i])^2)
+      # Each neighbour contributes the half plane u . (p - x_i) <= frac * d_ij,
+      # with u the unit vector toward it. The intersection is bounded exactly
+      # when those directions leave no angular gap of a half turn or more, and
+      # the offsets, hence the weights, cannot change that.
+      oth <- which(dall > 0)
+      bounded[i] <- if (length(oth) < 3L) FALSE else {
+        th <- sort(atan2(y[oth] - y[i], x[oth] - x[i]))
+        max(diff(c(th, th[1L] + 2 * pi))) < pi - 1e-9
+      }
       ord <- order(dall); ord <- ord[ord != i]
       # The bisector against neighbour j sits at frac_j * d_ij from the subject,
       # and frac_j is at least w_i / (w_i + max(w)). Working outward from the
@@ -162,7 +189,8 @@ apa <- function(stand, weight = c("none", "dbh", "lcw", "csa"), exponent = 1,
     }
     plot_m2 <- plot_area[1L] * 10000
     if (normalize && sum(area) > 0) area <- area * plot_m2 / sum(area)
-    list(tree_id = tree_id, apa = area, apa_share = area / plot_m2)
+    list(tree_id = tree_id, apa = area, apa_share = area / plot_m2,
+         apa_bounded = bounded)
   }, by = "plot_id"]
 }
 

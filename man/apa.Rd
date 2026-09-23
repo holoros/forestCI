@@ -38,8 +38,10 @@ contain every stem.}
 plot area. Default `FALSE`.}
 }
 \value{
-A `data.table` with `plot_id`, `tree_id`, `apa` (m2) and
-  `apa_share`, the polygon area as a proportion of plot area.
+A `data.table` with `plot_id`, `tree_id`, `apa` (m2),
+  `apa_share`, the polygon area as a proportion of plot area, and
+  `apa_bounded`, `TRUE` when neighbours close the polygon on every side and
+  `FALSE` when it is closed only by the plot boundary.
 }
 \description{
 Growing space allocated to each tree by a weighted Voronoi tessellation of
@@ -74,6 +76,23 @@ space outside the plot. Trees on the plot edge have no competitor on their
 outer side and their polygon is therefore bounded by the plot boundary
 rather than by a neighbour; `edge_flag()` marks them and
 `competition_indices()` sets their APA to `NA` when `edge = "exclude"`.
+}
+
+\section{Unbounded polygons}{
+
+A tree whose neighbours all lie within a half plane of it, which is every
+tree on the convex hull of the stems, has a polygon that no neighbour
+closes. Its growing space is undefined in the plane and the area returned is
+whatever the plot boundary leaves, so it depends on `boundary` in a way a
+closed polygon's does not. `apa_bounded` is `FALSE` for these trees. It is a
+property of the stem map alone, the same under every `weight`, `exponent`
+and `boundary`, because a displaced bisector moves a half plane without
+turning it. The original Acadian ENGINE has no answer for these trees: it
+returns exactly zero, `NA`, or the area of a polygon that does not contain
+the subject tree. On the Penobscot example plot it does so for all 10 of the
+25 trees that `apa_bounded` marks, and agrees with `apa()` to a relative
+difference below 1e-10 on the other 15. Filter on `apa_bounded` to compare
+with that code, or to keep boundary dependent values out of an analysis.
 }
 
 \examples{

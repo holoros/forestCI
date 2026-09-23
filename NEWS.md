@@ -1,8 +1,21 @@
 # forestCI (development version)
 
-No change to any exported function or any number the package returns. Four
-verification scripts are added to `inst/scripts`, and the README records what
-they found.
+No number the package returns has changed. `apa()` gains one output column,
+four verification scripts are added to `inst/scripts`, and the README records
+what they found.
+
+* **`apa()` now returns `apa_bounded`.** It is `FALSE` for a tree whose
+  polygon no neighbour closes, which is every tree on the convex hull of the
+  stems, so its area is whatever the plot boundary leaves and changes with
+  `boundary`. The flag depends on the stem map alone and is the same under
+  every weight, exponent and boundary. Before this a caller could not tell a
+  closed polygon from an open one clipped to the plot. The values in `apa` are
+  unchanged. The original Acadian ENGINE has no answer for these trees: on the
+  Penobscot example plot it returns exactly zero for 6, `NA` for 2, and for 2
+  more (TreeNum 15000 and 24600) the area of a polygon that does not contain
+  the subject stem, because its elimination step assumes the neighbours
+  surround the subject and across a gap of more than a half turn discards
+  genuine bounding neighbours. `apa_bounded` marks exactly those 10.
 
 * `verify_crown_exposure_apa.R`, `verify_crown_exposure_matched.R` and
   `verify_open_sky_view.R` compare the crown exposure family and the exact
@@ -13,6 +26,16 @@ they found.
   closed by neighbours, the analytic crown projection area is exact and the
   analytic crown surface area agrees to 0.264 percent once the crown radius
   input is matched, and the exposure ratios correlate at 0.984 and above.
+
+* `verify_open_sky_view.R` takes the original's facet and ray resolutions,
+  `res1` and `res2`, as comma lists and writes a convergence table. Refining
+  the original from `res1 = 8, res2 = 16` to `res1 = 32` or to `res2 = 32`
+  keeps its stand mean sky fraction within 0.4705 to 0.4814, non monotone in
+  `res1` and falling with `res2`, so forestCI's high bias is 13.5 to 16.1
+  percent across every setting at or above the default. The bias belongs to
+  the single normal ray estimator, not to the reference's discretization, and
+  the tree level correlation stays between 0.834 and 0.856 however fine the
+  reference is made.
 
 * `validate_crosswalk_external.R` checks the 38 species codes that carry an FIA
   species code against a full FIA `REF_SPECIES` export, on species code, genus,

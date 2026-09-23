@@ -1,9 +1,22 @@
 # Regression of forestCI crown exposure and polygon APA against CI.R.
 # Writes CSVs to the directory given as arg 2. No graphics, no interactive device.
+#
+# Polygon APA is compared unclipped (boundary = "none") and classified with
+# apa()'s apa_bounded flag. On the Penobscot example plot the 15 bounded trees
+# agree to a relative difference below 1e-10. The 10 unbounded trees are the
+# trees on the stem convex hull, and the original has no answer for any of
+# them: ENGINE's elimination step assumes the neighbours surround the subject,
+# so across an angular gap of more than a half turn it discards genuine
+# bounding neighbours. With two neighbours left the two corners coincide and
+# the area is exactly 0 (6 trees), with one it is NA (2 trees), and with three
+# or more it closes a polygon that does not contain the subject stem (2 trees,
+# TreeNum 15000 and 24600). The orig_poly_has_stem column tests the last case
+# directly on ENGINE's own corner coordinates.
 args <- commandArgs(trailingOnly = TRUE)
 orig <- if (length(args) >= 1) args[1] else "orig"
 outd <- if (length(args) >= 2) args[2] else "."
 dir.create(outd, showWarnings = FALSE, recursive = TRUE)
+outd <- normalizePath(outd); orig <- normalizePath(orig)
 elog <- file.path(outd, "error_log.txt")
 trap <- function(tag, expr) tryCatch(expr, error = function(e) {
   cat(sprintf("[%s] %s\n", tag, conditionMessage(e)), file = elog, append = TRUE)
@@ -20,8 +33,11 @@ st <- as_stand(d1, plot = "PlotID.yr", tree = "TreeNum", species = "FVS",
                distance = "Dist", azimuth = "Az", expf = "EXPF")
 ce <- crown_exposure(st, osv = FALSE)
 ap <- apa(st, weight = "none")
+ap_open <- as.data.table(apa(st, weight = "none", boundary = "none"))[
+  , .(tree_id, apa_unclipped = apa, apa_bounded)]
 pkg <- merge(as.data.table(ce)[, .(tree_id, csa, csax, csax_rel, cpa, cpax, cpax_rel)],
              as.data.table(ap)[, .(tree_id, apa)], by = "tree_id")
+pkg <- merge(pkg, ap_open, by = "tree_id")
 setnames(pkg, "tree_id", "TreeNum")
 cat("forestCI side:", nrow(pkg), "trees\n")
 
@@ -38,9 +54,24 @@ FORMAT(inputs = data, plots = "PlotID.yr", trees = "TreeNum",
 CPARS <- list(widept = wides, upexp = ups, loexp = los, shape = shps, trnc = FALSE)
 
 # 2a. polygon APA. APAr wraps START, CROWNS, FLTnWGTdfs, ENGINE.
+# even odd point in polygon test on ENGINE's absolute corner coordinates
+stem_in_corners <- function(k) {
+  if (k > length(CornersXk) || k > length(CornersYk)) return(NA)
+  cx <- CornersXk[[k]]; cy <- CornersYk[[k]]
+  if (is.null(cx) || length(cx) < 3L || any(!is.finite(c(cx, cy)))) return(NA)
+  px <- X[k]; py <- Y[k]; L <- length(cx); inside <- FALSE
+  for (q in seq_len(L)) {
+    r <- if (q == L) 1L else q + 1L
+    if ((cy[q] > py) != (cy[r] > py) &&
+        px < (cx[r] - cx[q]) * (py - cy[q]) / (cy[r] - cy[q]) + cx[q])
+      inside <- !inside
+  }
+  inside
+}
 orig_apa <- trap("APAr", {
   do.call(APAr, c(list(choice = pid, crowncenters = FALSE), CPARS))
   data.frame(TreeNum = as.character(names(APAk)), apa_orig = as.numeric(APAk),
+             orig_poly_has_stem = vapply(seq_along(APAk), stem_in_corners, NA),
              stringsAsFactors = FALSE)
 })
 
@@ -86,12 +117,28 @@ if ("csax_orig_s" %in% names(cmp))
              ratio_orig_f = csax_orig_f / upcsa_orig_f,
              ratio_orig_c = csax_orig_c / upcsa_orig_c,
              cpa_ratio_orig_s = cpax_orig_s / cpa_orig_s)]
+if ("apa_orig" %in% names(cmp)) {
+  cmp[, apa_rel_diff := abs(apa_unclipped - apa_orig) / pmax(abs(apa_orig), 1e-12)]
+  cmp[, apa_class := fifelse(apa_bounded,
+    fifelse(!is.na(apa_rel_diff) & apa_rel_diff < 1e-10, "bounded, exact",
+            "bounded, DIFFERS"),
+    fifelse(is.na(apa_orig), "unbounded, original NA",
+    fifelse(apa_orig == 0, "unbounded, original zero",
+    fifelse(orig_poly_has_stem %in% FALSE,
+            "unbounded, original polygon excludes the stem",
+            "unbounded, other"))))]
+  cls <- cmp[, .N, by = apa_class][order(apa_class)]
+  fwrite(cls, file.path(outd, "2026-09-23_forestCI-apa-class_DATA.csv"))
+  print(cls)
+}
 fwrite(cmp, file.path(outd, "2026-09-23_forestCI-ce-apa-treewise_DATA.csv"))
 
 pd <- function(a, b) { k <- is.finite(a) & is.finite(b) & (abs(a) + abs(b)) > 0
   if (!any(k)) return(NA_real_); max(abs(a[k] - b[k]) / pmax(abs(b[k]), 1e-12)) * 100 }
+bnd <- if ("apa_orig" %in% names(cmp)) cmp[apa_bounded == TRUE] else cmp[0]
 res <- data.table(
   quantity = c("polygon APA, unweighted",
+               "polygon APA, unweighted, unclipped, bounded cells",
                "analytic crown surface area",
                "analytic crown projection area",
                "exposed CSA ratio, pkg vs orig stem centred",
@@ -100,6 +147,7 @@ res <- data.table(
                "exposed CPA ratio, pkg vs orig stem centred"),
   max_pct_diff = c(
     if (!is.null(orig_apa)) pd(cmp$apa, cmp$apa_orig) else NA_real_,
+    if (nrow(bnd)) pd(bnd$apa_unclipped, bnd$apa_orig) else NA_real_,
     pd(cmp$csa, cmp$csa_orig_s), pd(cmp$cpa, cmp$cpa_orig_s),
     pd(cmp$csax_rel, cmp$ratio_orig_s),
     pd(cmp$ratio_orig_s, cmp$ratio_orig_f),
@@ -107,6 +155,7 @@ res <- data.table(
     pd(cmp$cpax_rel, cmp$cpa_ratio_orig_s)))
 res[, correlation := c(
   if (!is.null(orig_apa)) cor(cmp$apa, cmp$apa_orig, use = "complete") else NA_real_,
+  if (nrow(bnd) > 2L) cor(bnd$apa_unclipped, bnd$apa_orig, use = "complete") else NA_real_,
   cor(cmp$csa, cmp$csa_orig_s, use = "complete"),
   cor(cmp$cpa, cmp$cpa_orig_s, use = "complete"),
   cor(cmp$csax_rel, cmp$ratio_orig_s, use = "complete"),
