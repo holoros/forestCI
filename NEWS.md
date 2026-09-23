@@ -1,3 +1,30 @@
+# forestCI (development version)
+
+No change to any exported function or any number the package returns. Four
+verification scripts are added to `inst/scripts`, and the README records what
+they found.
+
+* `verify_crown_exposure_apa.R`, `verify_crown_exposure_matched.R` and
+  `verify_open_sky_view.R` compare the crown exposure family and the exact
+  polygon area potentially available against the original CI.R implementation.
+  These were the least verified parts of the package, because the original's
+  `OVERLAP()` and `POVii()` are commented out in its own driver and had never
+  been exercised. The polygon APA is identical for every tree whose polygon is
+  closed by neighbours, the analytic crown projection area is exact and the
+  analytic crown surface area agrees to 0.264 percent once the crown radius
+  input is matched, and the exposure ratios correlate at 0.984 and above.
+
+* `validate_crosswalk_external.R` checks the 38 species codes that carry an FIA
+  species code against a full FIA `REF_SPECIES` export, on species code, genus,
+  softwood or hardwood class, common name and binomial. All 38 pass. This
+  replaces a check that used the crown width library's own columns, which could
+  not have caught a congeneric same clade mismapping.
+
+* `?conus_crown_width` is unchanged; the library's SPCD 376, *Betula
+  neoalaskana* Sarg., is an Alaska and boreal species in a nominally
+  conterminous library. It is not one of the 38 mapped codes and affects no
+  prediction.
+
 # forestCI 0.2.0
 
 A second crown width coefficient source, and one real defect fixed. The Acadian

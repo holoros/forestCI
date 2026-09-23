@@ -101,6 +101,38 @@ every tree. On R 4.5.2:
 | Basal area and crown competition factor of larger trees | one tied diameter pair |
 | Crown surface area and volume from predicted rather than measured crown width | different input, not different method |
 
+The crown exposure family and the exact polygon area potentially available were
+added to that record on 2026-09-23, using `inst/scripts/verify_crown_exposure_apa.R`,
+`inst/scripts/verify_crown_exposure_matched.R` and
+`inst/scripts/verify_open_sky_view.R`. The original's `OVERLAP()` and `POVii()`
+are commented out in its own driver and had never been run, so this is the first
+time these quantities have been compared to anything outside the package.
+
+| Quantity | Agreement |
+|:---|:---|
+| Polygon APA, every tree whose polygon is closed by neighbours | identical (15 of 25 trees, below 1e-10) |
+| Polygon APA, trees with an unbounded polygon | not comparable; the original returns 0 or NA |
+| Analytic crown projection area, measured radii | identical (3.8e-13 percent) |
+| Analytic crown surface area, measured radii | 0.264 percent |
+| Exposed crown projection ratio | r = 0.996, stand means within 0.7 percent |
+| Exposed crown surface ratio | r = 0.984, stand means within 3.1 percent |
+| Open sky view, sky fraction | r = 0.834, forestCI 13.5 percent high |
+
+The last three rows are characterizations rather than certifications, and the
+reason is in the reference. Halving the original's raster cell side from 0.25 m
+to 0.125 m moves its own exposed surface ratio by up to 27.7 percent on an
+individual tree, so it is not a precise reference at the resolution it is
+normally run at. Open sky view differs by construction: `forestCI` casts one ray
+per crown facet along the outward normal, while the original integrates the sky
+fraction over the whole upward hemisphere at each facet, and a single normal ray
+escapes more readily, so the high bias is the expected direction.
+
+The 38 species codes that carry an FIA species code are checked against a full
+FIA `REF_SPECIES` export by `inst/scripts/validate_crosswalk_external.R`. All 38
+pass on species code, genus, softwood or hardwood class, common name and
+binomial. Supply a full export, roughly 2,700 rows; a subset whose species code
+set is the crown width library's own set confirms internal consistency only.
+
 The last two rows are deliberate. `forestCI` treats trees of equal diameter
 symmetrically, so a tied pair each see only the trees strictly larger than both,
 where a plain cumulative sum gives the second one of the pair the first one's
