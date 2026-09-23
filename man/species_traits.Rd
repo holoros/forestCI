@@ -4,7 +4,7 @@
 \alias{species_traits}
 \title{Species trait defaults used by forestCI}
 \usage{
-species_traits(extra = NULL)
+species_traits(extra = NULL, source = c("acadian", "conus"))
 }
 \arguments{
 \item{extra}{Optional `data.frame` of the same shape as the built-in table.
@@ -12,6 +12,18 @@ Rows whose `code` matches a built-in row replace it; rows with a new
 `code` are appended. Columns absent from `extra` are taken from the
 softwood or hardwood default, so a minimal override needs only `code`,
 `sp_type` and the columns actually being changed.}
+
+\item{source}{Coefficient source for maximum and largest crown width,
+either `"acadian"`, the default, which is Russell and Weiskittel (2011)
+for 15 species in Maine, or `"conus"`, the CONUS library keyed on FIA
+species code. Under `"conus"` the 38 species that carry an FIA code take
+the CONUS coefficients and the domain hold and clade ceiling that go with
+them; the genus level and unknown codes (AS, HI, OH, OS, 99) keep the
+Acadian type defaults, because no single FIA code is defensible for them.
+Every row records which it carries in `cw_form` and `source_crown`. See
+[max_crown_width()] for the two forms and for the caveats on the CONUS
+one. `extra` is applied after the source swap, so a user supplied
+coefficient still wins.}
 }
 \value{
 A `data.table` of species traits, keyed on `code`.
@@ -66,6 +78,8 @@ implemented in the Acadian variant.
 
 \examples{
 head(species_traits())
+# the CONUS library instead of the Acadian one
+table(species_traits(source = "conus")$cw_form)
 # add a western species using hardwood defaults for crown shape
 species_traits(data.frame(code = "DF", sp_type = "SW", sg = 0.45,
                           shade = 2.8, common_name = "Douglas-fir"))

@@ -63,14 +63,30 @@
 #' Waskiewicz, J.D. (2011) Influence of neighborhood structure on growth in
 #' northern red oak and eastern white pine stands. PhD dissertation,
 #' University of Maine.
+#' @param source Coefficient source for maximum and largest crown width,
+#'   either `"acadian"`, the default, which is Russell and Weiskittel (2011)
+#'   for 15 species in Maine, or `"conus"`, the CONUS library keyed on FIA
+#'   species code. Under `"conus"` the 38 species that carry an FIA code take
+#'   the CONUS coefficients and the domain hold and clade ceiling that go with
+#'   them; the genus level and unknown codes (AS, HI, OH, OS, 99) keep the
+#'   Acadian type defaults, because no single FIA code is defensible for them.
+#'   Every row records which it carries in `cw_form` and `source_crown`. See
+#'   [max_crown_width()] for the two forms and for the caveats on the CONUS
+#'   one. `extra` is applied after the source swap, so a user supplied
+#'   coefficient still wins.
 #' @export
 #' @examples
 #' head(species_traits())
+#' # the CONUS library instead of the Acadian one
+#' table(species_traits(source = "conus")$cw_form)
 #' # add a western species using hardwood defaults for crown shape
 #' species_traits(data.frame(code = "DF", sp_type = "SW", sg = 0.45,
 #'                           shade = 2.8, common_name = "Douglas-fir"))
-species_traits <- function(extra = NULL) {
+species_traits <- function(extra = NULL,
+                           source = c("acadian", "conus")) {
+  source <- match.arg(source)
   tr <- data.table::copy(forestCI::species_traits_default)
+  if (identical(source, "conus")) tr <- apply_conus_crown_width(tr)
   if (is.null(extra)) {
     data.table::setkeyv(tr, "code")
     return(tr[])
@@ -156,4 +172,33 @@ attach_traits <- function(trees, traits = species_traits(), quiet = FALSE) {
     for (cl in trait_cols) trees[, (cl) := traits[[cl]][idx]]
   }
   trees[]
+}
+
+# Replace the Acadian crown width coefficients with the CONUS library for
+# every species code that carries an FIA species code, leaving the rest on the
+# Acadian type defaults. The five codes that keep them (AS, HI, OH, OS and 99)
+# are genus level or explicitly unknown, so no single FIA code is defensible
+# for them; `source_crown` and `cw_form` record which rows moved.
+apply_conus_crown_width <- function(tr) {
+  L <- data.table::as.data.table(forestCI::conus_crown_width)
+  i <- match(tr$spcd, L$spcd)
+  hit <- !is.na(i)
+  if (!any(hit)) return(tr)
+  j <- i[hit]
+  tr[hit, "mcw_a1"        := L$mcw_a1[j]]
+  tr[hit, "mcw_a2"        := L$mcw_a2[j]]
+  tr[hit, "lcw_b1"        := NA_real_]
+  tr[hit, "lcw_b2"        := NA_real_]
+  tr[hit, "cw_form"       := "conus"]
+  tr[hit, "mcw_dbh_max"   := L$dbh_max_fit[j]]
+  tr[hit, "mcw_dbh_min"   := L$dbh_min_fit[j]]
+  tr[hit, "mcw_ceiling"   := L$cw_ceiling[j]]
+  tr[hit, "lcw_r0"        := L$lcw_r0[j]]
+  tr[hit, "lcw_rcr"       := L$lcw_rcr[j]]
+  tr[hit, "lcw_rdbh"      := L$lcw_rdbh[j]]
+  tr[hit, "cw_provenance" := L$provenance[j]]
+  tr[hit, "cw_confidence" := L$confidence[j]]
+  tr[hit, "cw_n_obs"      := L$n_obs[j]]
+  tr[hit, "source_crown"  := "conus"]
+  tr[]
 }

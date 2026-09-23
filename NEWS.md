@@ -1,3 +1,66 @@
+# forestCI 0.2.0
+
+A second crown width coefficient source, and one real defect fixed. The Acadian
+source remains the default, so every number the package returned in 0.1.2 it
+still returns, and the regression against the original scripts is unchanged.
+
+* **`species_traits(source = "conus")` swaps in the CONUS maximum and largest
+  crown width library.** Thirty eight of the 43 species codes carry an FIA
+  species code and take the CONUS coefficients; the genus level and unknown
+  codes (`AS`, `HI`, `OH`, `OS`, `99`) keep the Acadian type defaults, because
+  no single FIA code is defensible for them. Every row records which it carries
+  in `cw_form` and `source_crown`. Nothing else in the package needs an
+  argument: `as_stand(traits = species_traits(source = "conus"))` carries the
+  source through to crown competition factor, the crown exposure family, the
+  influence zone neighbourhood and LCW weighted APA.
+
+* The CONUS form is a different model of a different quantity, not a refit of
+  Russell and Weiskittel (2011). Maximum crown width is the tau 0.95 quantile
+  of crown width on diameter at crown ratio 1, evaluated through a three step
+  recipe whose order matters: the trait corrected curve, a hold at
+  `mcw_dbh_max`, then a cap at the clade crown ceiling, 22.86 m hardwood and
+  19.87 m softwood. Largest crown width is a bounded fraction of that envelope
+  rather than a second allometry, so it lies below maximum crown width by
+  construction. `?max_crown_width` documents the three caveats that come with
+  it: the quantile estimand against the mean that crown competition factor was
+  calibrated on, the domain hold going flat inside a normal inventory, and a
+  largest crown width ratio whose crown ratio and diameter slopes are global
+  constants rather than species specific.
+
+* This does **not** settle the Russell and Weiskittel Eq. 3 crown ratio
+  coefficients. That remains open and still needs a reader with the rendered
+  paper. The documentation now says so in both places.
+
+* **An unknown species code no longer always takes hardwood coefficients.**
+  `lookup_traits()` selected the hardwood default row unconditionally, so an
+  unrecognised softwood got hardwood maximum crown width, about 37 percent high
+  at 20 cm DBH and about 1.9 times high on crown area, crown competition factor
+  and CCFL. The 0.1.2 `sp_type` fix repaired `attach_traits()` but `as_stand()`
+  discarded that resolution one line later. `max_crown_width()`,
+  `largest_crown_width()`, `max_crown_area()` and `crown_dimensions()` now take
+  an optional `sp_type`, `as_stand()` passes the stand's own, and with no
+  `sp_type` the hardwood default is still used, so no existing call changes.
+
+* `largest_crown_width()` gains `cr`, used by the CONUS form and ignored by the
+  Acadian one. `as_stand()` now computes crown ratio before crown width and
+  passes it through.
+
+* `as_stand()` no longer inlines the crown area arithmetic that
+  `max_crown_area()` defines; both call one internal function, so they cannot
+  drift apart.
+
+* New data object `conus_crown_width`, 466 FIA species codes, metric, carrying
+  the fitted domain, the clade ceiling, provenance and confidence class for
+  every code. The English unit library was converted analytically and checked
+  against the source project's own independent metric export: agreement to
+  5.0e-15 relative in `mcw_a1`, exact in `mcw_a2`, 1.4e-13 cm in
+  `dbh_max_fit`. Adds about 15 KB to the installed package. Seventeen of
+  the 466 rows carry a single crown measured tree, so `dbh_min_fit` and
+  `dbh_max_fit` are equal and the fitted range is a point. All seventeen
+  are donor carried or borrowed and none of them is an FIA code that the
+  forestCI trait table maps to, so no shipped prediction is held at a
+  point by them; `?conus_crown_width` records the count.
+
 # forestCI 0.1.2
 
 Stress and scaling release. An 84 probe edge case suite was run over degenerate

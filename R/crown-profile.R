@@ -250,6 +250,9 @@ crown_radius_at <- function(profile, height_above_ground, lcw, height, hcb,
 #'   `lo_exp` and `shape` are taken from `traits` and any values passed
 #'   directly are ignored.
 #' @param traits Trait table, normally from [species_traits()].
+#' @param sp_type Optional "SW" or "HW", used to pick the softwood or hardwood
+#'   default for a species code that is not in the trait table. With none the
+#'   hardwood default is used, which is the historical behaviour.
 #' @param n_sub Number of subdivisions used by `method = "simpson"`.
 #' @param method Integration rule. `"adaptive"` calls [stats::integrate()] once
 #'   per tree and per crown section, which handles the vertical tangent that the
@@ -269,7 +272,7 @@ crown_radius_at <- function(profile, height_above_ground, lcw, height, hcb,
 crown_dimensions <- function(profile, lcw, height, hcb,
                              species = NULL, traits = species_traits(),
                              widest = 0.7, up_exp = 3, lo_exp = 3, shape = "e",
-                             cr = NULL, hw = 0, n_sub = 200L,
+                             cr = NULL, hw = 0, sp_type = NULL, n_sub = 200L,
                              method = c("adaptive", "simpson")) {
   method <- match.arg(method)
   stopifnot(inherits(profile, "crown_profile"))
@@ -279,7 +282,8 @@ crown_dimensions <- function(profile, lcw, height, hcb,
   if (!is.null(species)) {
     species <- rep_len(as.character(species), n)
     p <- lookup_traits(species, traits,
-                       c("widest", "up_exp", "lo_exp", "shape", "sp_type"))
+                       c("widest", "up_exp", "lo_exp", "shape", "sp_type"),
+                       sp_type = sp_type)
     widest <- as.numeric(p$widest)
     up_exp <- as.numeric(p$up_exp)
     lo_exp <- as.numeric(p$lo_exp)

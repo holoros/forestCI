@@ -4,7 +4,7 @@
 \alias{max_crown_area}
 \title{Maximum crown area and crown competition factor contribution}
 \usage{
-max_crown_area(dbh, species, expf, traits = species_traits())
+max_crown_area(dbh, species, expf, traits = species_traits(), sp_type = NULL)
 }
 \arguments{
 \item{dbh}{Numeric vector of diameter at breast height, cm.}
@@ -14,6 +14,11 @@ max_crown_area(dbh, species, expf, traits = species_traits())
 \item{expf}{Expansion factor, trees ha-1 represented by each record.}
 
 \item{traits}{Trait table, normally from [species_traits()].}
+
+\item{sp_type}{Optional character vector, `"SW"` or `"HW"`, used to pick the
+softwood or hardwood default for a species code that is not in the trait
+table. Recycled against `species`. When it is not supplied the hardwood
+default is used, which is the historical behaviour.}
 }
 \value{
 Numeric vector, percent of a hectare.

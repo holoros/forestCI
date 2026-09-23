@@ -17,6 +17,7 @@ crown_dimensions(
   shape = "e",
   cr = NULL,
   hw = 0,
+  sp_type = NULL,
   n_sub = 200L,
   method = c("adaptive", "simpson")
 )
@@ -46,6 +47,10 @@ from the apex.}
 
 \item{hw}{Hardwood indicator, 0 or 1, used by the `"variable_exponent"`
 family.}
+
+\item{sp_type}{Optional "SW" or "HW", used to pick the softwood or hardwood
+default for a species code that is not in the trait table. With none the
+hardwood default is used, which is the historical behaviour.}
 
 \item{n_sub}{Number of subdivisions used by `method = "simpson"`.}
 

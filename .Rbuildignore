@@ -5,3 +5,6 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^dev$
+^demo_out$
+^reg_out$
+^.*\.log$

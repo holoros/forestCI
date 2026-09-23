@@ -160,10 +160,15 @@ as_stand <- function(data,
   tr <- attach_traits(tr, traits, quiet = quiet)
   tr[, "ba_m2" := tree_ba(tr$dbh)]
   tr[, "ba_ha" := tr$ba_m2 * tr$expf]
-  tr[, "mcw" := max_crown_width(tr$dbh, tr$species, traits)]
-  tr[, "lcw" := largest_crown_width(tr$dbh, tr$species, traits, mcw = tr$mcw)]
-  tr[, "mca" := 100 * ((pi * (tr$mcw / 2)^2) / 10000) * tr$expf]
+  # crown ratio is computed first because the CONUS largest crown width form
+  # reads it; the Acadian form ignores it, so this reorder changes no number
+  # under the default source.
   tr[, "cr"  := (tr$height - tr$hcb) / tr$height]
+  st <- if ("sp_type" %in% names(tr)) tr$sp_type else NULL
+  tr[, "mcw" := max_crown_width(tr$dbh, tr$species, traits, sp_type = st)]
+  tr[, "lcw" := largest_crown_width(tr$dbh, tr$species, traits, mcw = tr$mcw,
+                                    cr = tr$cr, sp_type = st)]
+  tr[, "mca" := crown_area_pct(tr$mcw, tr$expf)]
 
   plots <- tr[, list(
     n_trees     = .N,
